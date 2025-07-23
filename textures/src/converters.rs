@@ -16,6 +16,15 @@ pub fn convert_posterize(image: &RgbImage) -> Texture {
     result
 }
 
+fn mono(color: RGBColor) -> RGBColor {
+    let avg = color.r + color.g + color.b;
+    if avg > 128 * 3 {
+        RGBColor::new(255, 255, 255)
+    } else {
+        RGBColor::new(0, 0, 0)
+    }
+}
+
 pub fn convert_fs(image: &RgbImage) -> Texture {
     let mut inner = RGBPlane::new(image.width(), image.height());
     let mut result = Texture::new(image.width(), image.height());

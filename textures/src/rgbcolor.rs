@@ -54,6 +54,15 @@ impl RGBColor {
             b: COLORS_RB[self.b.clamp(0, 31) as usize],
         }
     }
+
+    pub fn gray(&self) -> RGBColor {
+        let color = (self.r + self.g + self.b) / 3;
+        RGBColor {
+            r: color,
+            g: color,
+            b: color,
+        }
+    }
 }
 
 impl ops::Add<RGBColor> for RGBColor {
