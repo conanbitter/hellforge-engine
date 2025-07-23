@@ -1,3 +1,5 @@
+use std::ops;
+
 use image::Rgb;
 
 use crate::color::Color16;
@@ -54,6 +56,50 @@ impl RGBColor {
     }
 }
 
+impl ops::Add<RGBColor> for RGBColor {
+    type Output = RGBColor;
+
+    fn add(self, rhs: RGBColor) -> Self::Output {
+        RGBColor {
+            r: self.r + rhs.r,
+            g: self.g + rhs.g,
+            b: self.b + rhs.b,
+        }
+    }
+}
+
+impl ops::AddAssign<RGBColor> for RGBColor {
+    fn add_assign(&mut self, rhs: RGBColor) {
+        self.r += rhs.r;
+        self.g += rhs.g;
+        self.b += rhs.b;
+    }
+}
+
+impl ops::Sub<RGBColor> for RGBColor {
+    type Output = RGBColor;
+
+    fn sub(self, rhs: RGBColor) -> Self::Output {
+        RGBColor {
+            r: self.r - rhs.r,
+            g: self.g - rhs.g,
+            b: self.b - rhs.b,
+        }
+    }
+}
+
+impl ops::Mul<i32> for RGBColor {
+    type Output = RGBColor;
+
+    fn mul(self, rhs: i32) -> Self::Output {
+        RGBColor {
+            r: self.r * rhs,
+            g: self.g * rhs,
+            b: self.b * rhs,
+        }
+    }
+}
+
 impl From<RGBColor> for Color16 {
     fn from(color: RGBColor) -> Self {
         let r = color.r.clamp(0, 31) as u16;
@@ -84,5 +130,33 @@ impl From<&Rgb<u8>> for RGBColor {
             g: value[1] as i32,
             b: value[2] as i32,
         }
+    }
+}
+
+pub struct RGBPlane {
+    data: Vec<RGBColor>,
+    pub width: u32,
+    pub height: u32,
+}
+
+impl RGBPlane {
+    pub fn new(width: u32, height: u32) -> RGBPlane {
+        RGBPlane {
+            width,
+            height,
+            data: vec![RGBColor::new(0, 0, 0); (width * height) as usize],
+        }
+    }
+
+    pub fn set(&mut self, x: u32, y: u32, value: RGBColor) {
+        self.data[(x + y * self.width) as usize] = value;
+    }
+
+    pub fn add(&mut self, x: u32, y: u32, value: RGBColor) {
+        self.data[(x + y * self.width) as usize] += value;
+    }
+
+    pub fn get(&self, x: u32, y: u32) -> RGBColor {
+        self.data[(x + y * self.width) as usize]
     }
 }

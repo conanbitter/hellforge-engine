@@ -1,7 +1,11 @@
 use anyhow::Result;
 use image::{ImageReader, RgbImage};
 
-use crate::{converters::convert_posterize, rgbcolor::RGBColor, texture::Texture};
+use crate::{
+    converters::{convert_fs, convert_posterize},
+    rgbcolor::RGBColor,
+    texture::Texture,
+};
 
 mod color;
 mod converters;
@@ -22,7 +26,7 @@ fn save_texture(texture: &Texture, filename: String) -> Result<()> {
 
 fn main() -> Result<()> {
     let img = ImageReader::open("../assets/rainbow.png")?.decode()?.to_rgb8();
-    let tex = convert_posterize(&img);
+    let tex = convert_fs(&img);
     save_texture(&tex, "../assets/rainbow_tex.png".to_string())?;
     Ok(())
 }
