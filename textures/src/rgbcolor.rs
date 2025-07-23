@@ -1,11 +1,13 @@
+use image::Rgb;
+
+use crate::color::Color16;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RGBColor {
     pub r: i32,
     pub g: i32,
     pub b: i32,
 }
-
-pub struct Color16(u16);
 
 const fn get_colors_rb() -> [i32; 32] {
     let mut result = [0; 32];
@@ -52,8 +54,8 @@ impl RGBColor {
     }
 }
 
-impl From<&RGBColor> for Color16 {
-    fn from(color: &RGBColor) -> Self {
+impl From<RGBColor> for Color16 {
+    fn from(color: RGBColor) -> Self {
         let r = color.r.clamp(0, 31) as u16;
         let g = color.g.clamp(0, 63) as u16;
         let b = color.b.clamp(0, 31) as u16;
@@ -71,6 +73,16 @@ impl From<Color16> for RGBColor {
             r: COLORS_RB[r],
             g: COLORS_G[g],
             b: COLORS_RB[b],
+        }
+    }
+}
+
+impl From<&Rgb<u8>> for RGBColor {
+    fn from(value: &Rgb<u8>) -> Self {
+        RGBColor {
+            r: value[0] as i32,
+            g: value[1] as i32,
+            b: value[2] as i32,
         }
     }
 }
