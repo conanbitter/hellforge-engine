@@ -1,8 +1,11 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
+use clap::{Args, Parser};
 use image::{ImageReader, RgbImage};
 
 use crate::{
-    converters::{convert_fs, convert_fs_transparent, convert_posterize_transparent},
+    converters::{convert_fs, convert_fs_transparent, convert_posterize, convert_posterize_transparent},
     rgbcolor::RGBColor,
     texture::Texture,
 };
@@ -11,6 +14,29 @@ mod color;
 mod converters;
 mod rgbcolor;
 mod texture;
+
+#[derive(Args, Debug)]
+#[group(required = false, multiple = false)]
+struct ArgDithering {
+    #[arg(long)]
+    nodither: bool,
+    #[arg(long)]
+    fsdither: bool,
+    #[arg(long)]
+    ordered: Option<PathBuf>,
+}
+
+#[derive(Parser, Debug)]
+struct ArgMain {
+    #[arg(required = true)]
+    input: PathBuf,
+    #[arg(short, long)]
+    output: Option<PathBuf>,
+    #[arg(short, long)]
+    transparent: bool,
+    #[command(flatten)]
+    dithering: ArgDithering,
+}
 
 fn save_texture(texture: &Texture, filename: String) -> Result<()> {
     let mut img = RgbImage::new(texture.width, texture.height);
@@ -25,6 +51,53 @@ fn save_texture(texture: &Texture, filename: String) -> Result<()> {
 }
 
 fn main() -> Result<()> {
+    let args = ArgMain::parse();
+    let outfile = if let Some(filename) = args.output {
+        filename
+    } else {
+        let mut new_name = args.input.clone();
+        new_name.set_extension("tex");
+        new_name
+    };
+    print!("{:?} -> {:?}", args.input, outfile);
+    if args.transparent || args.dithering.fsdither || args.dithering.ordered.is_some() {
+        print!(" ( ");
+        if args.transparent {
+            print!("Transparent");
+            if args.dithering.fsdither {
+                print!(", Floyd-Steinberg Dithering");
+            }
+            if let Some(pattern) = args.dithering.ordered {
+                print!(", Ordered Dithering by {:?}", pattern);
+            }
+        } else {
+            if args.dithering.fsdither {
+                print!("Floyd-Steinberg Dithering");
+            }
+            if let Some(pattern) = args.dithering.ordered {
+                print!("Ordered Dithering by {:?}", pattern);
+            }
+        }
+        print!(" ) ");
+    }
+
+    let tex = if args.transparent {
+        let img = ImageReader::open(args.input)?.decode()?.to_rgba8();
+        if args.dithering.fsdither {
+            convert_fs_transparent(&img)
+        } else {
+            convert_posterize_transparent(&img)
+        }
+    } else {
+        let img = ImageReader::open(args.input)?.decode()?.to_rgb8();
+        if args.dithering.fsdither {
+            convert_fs(&img)
+        } else {
+            convert_posterize(&img)
+        }
+    };
+    tex.save(outfile)?;
+
     /*let img = ImageReader::open("../assets/image1.png")?.decode()?.to_rgb8();
     let tex = convert_fs(&img);
     tex.save("../assets/image1.tex".to_string())?;
@@ -32,9 +105,9 @@ fn main() -> Result<()> {
     let tex = Texture::from_file("../assets/image1.tex".to_string())?;
     save_texture(&tex, "../assets/image1_fromtex.png".to_string())?;*/
 
-    let img = ImageReader::open("../assets/transp1.png")?.decode()?.to_rgba8();
+    /*let img = ImageReader::open("../assets/transp1.png")?.decode()?.to_rgba8();
     let tex = convert_fs_transparent(&img);
-    save_texture(&tex, "../assets/transp1_res.png".to_string())?;
+    save_texture(&tex, "../assets/transp1_res.png".to_string())?;*/
 
     /*let mut tex = Texture::new(2, 3);
     tex.set(0, 0, Color16(65001));

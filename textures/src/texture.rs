@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, path::Path};
 
 use anyhow::Result;
 use bincode::{Decode, Encode};
@@ -23,7 +23,7 @@ impl Texture {
         }
     }
 
-    pub fn from_file(filename: String) -> Result<Texture> {
+    pub fn from_file<P: AsRef<Path>>(filename: P) -> Result<Texture> {
         let mut file = fs::File::open(filename)?;
         let config = bincode::config::standard().with_fixed_int_encoding();
         Ok(bincode::decode_from_std_read(&mut file, config)?)
@@ -37,7 +37,7 @@ impl Texture {
         self.data[(x + y * self.width) as usize]
     }
 
-    pub fn save(&self, filename: String) -> Result<()> {
+    pub fn save<P: AsRef<Path>>(&self, filename: P) -> Result<()> {
         let mut file = fs::File::create(filename)?;
         let config = bincode::config::standard().with_fixed_int_encoding();
         bincode::encode_into_std_write(self, &mut file, config)?;
