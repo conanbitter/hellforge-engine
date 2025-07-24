@@ -10,6 +10,7 @@ pub struct Texture {
     data: Vec<Color16>,
     pub width: u32,
     pub height: u32,
+    pub transparent_color: Option<Color16>,
 }
 
 impl Texture {
@@ -17,6 +18,7 @@ impl Texture {
         Texture {
             width,
             height,
+            transparent_color: None,
             data: vec![Color16(0); (width * height) as usize],
         }
     }
