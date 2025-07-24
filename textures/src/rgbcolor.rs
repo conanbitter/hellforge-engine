@@ -1,10 +1,10 @@
-use std::ops;
+use std::{i32, ops};
 
-use image::Rgb;
+use image::{Rgb, Rgba};
 
 use crate::color::Color16;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct RGBColor {
     pub r: i32,
     pub g: i32,
@@ -39,6 +39,13 @@ impl RGBColor {
         RGBColor { r, g, b }
     }
 
+    pub fn distance_squared(color1: RGBColor, color2: RGBColor) -> i32 {
+        let r = color1.r - color2.r;
+        let g = color1.g - color2.g;
+        let b = color1.b - color2.b;
+        r * r + g * g + b * b
+    }
+
     pub fn to16bit(&self) -> RGBColor {
         RGBColor {
             r: self.r.clamp(0, 255) / 8,
@@ -63,6 +70,20 @@ impl RGBColor {
             b: color,
         }
     }
+
+    pub const BLACK: RGBColor = RGBColor { r: 0, g: 0, b: 0 };
+    pub const WHITE: RGBColor = RGBColor { r: 255, g: 255, b: 255 };
+    pub const RED: RGBColor = RGBColor { r: 255, g: 0, b: 0 };
+    pub const GREEN: RGBColor = RGBColor { r: 0, g: 255, b: 0 };
+    pub const BLUE: RGBColor = RGBColor { r: 0, g: 0, b: 255 };
+    pub const CYAN: RGBColor = RGBColor { r: 0, g: 255, b: 255 };
+    pub const MAGENTA: RGBColor = RGBColor { r: 255, g: 0, b: 255 };
+    pub const YELLOW: RGBColor = RGBColor { r: 255, g: 255, b: 0 };
+    pub const TRANSPARENT: RGBColor = RGBColor {
+        r: i32::MIN,
+        g: i32::MIN,
+        b: i32::MIN,
+    };
 }
 
 impl ops::Add<RGBColor> for RGBColor {
@@ -134,6 +155,16 @@ impl From<Color16> for RGBColor {
 
 impl From<&Rgb<u8>> for RGBColor {
     fn from(value: &Rgb<u8>) -> Self {
+        RGBColor {
+            r: value[0] as i32,
+            g: value[1] as i32,
+            b: value[2] as i32,
+        }
+    }
+}
+
+impl From<&Rgba<u8>> for RGBColor {
+    fn from(value: &Rgba<u8>) -> Self {
         RGBColor {
             r: value[0] as i32,
             g: value[1] as i32,

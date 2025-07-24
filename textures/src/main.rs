@@ -1,7 +1,11 @@
 use anyhow::Result;
 use image::{ImageReader, RgbImage};
 
-use crate::{converters::convert_fs, rgbcolor::RGBColor, texture::Texture};
+use crate::{
+    converters::{convert_fs, convert_fs_transparent, convert_posterize_transparent},
+    rgbcolor::RGBColor,
+    texture::Texture,
+};
 
 mod color;
 mod converters;
@@ -21,12 +25,17 @@ fn save_texture(texture: &Texture, filename: String) -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    let img = ImageReader::open("../assets/image1.png")?.decode()?.to_rgb8();
+    /*let img = ImageReader::open("../assets/image1.png")?.decode()?.to_rgb8();
     let tex = convert_fs(&img);
     tex.save("../assets/image1.tex".to_string())?;
 
     let tex = Texture::from_file("../assets/image1.tex".to_string())?;
-    save_texture(&tex, "../assets/image1_fromtex.png".to_string())?;
+    save_texture(&tex, "../assets/image1_fromtex.png".to_string())?;*/
+
+    let img = ImageReader::open("../assets/transp1.png")?.decode()?.to_rgba8();
+    let tex = convert_fs_transparent(&img);
+    save_texture(&tex, "../assets/transp1_res.png".to_string())?;
+
     /*let mut tex = Texture::new(2, 3);
     tex.set(0, 0, Color16(65001));
     tex.set(1, 0, Color16(65002));
