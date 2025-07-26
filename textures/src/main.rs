@@ -1,11 +1,14 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use clap::{Args, Parser};
+use clap::Parser;
 use image::{ImageReader, RgbImage};
 
 use crate::{
-    converters::{convert_fs, convert_fs_transparent, convert_posterize, convert_posterize_transparent},
+    converters::{
+        convert_fs, convert_fs_transparent, convert_ordered4, convert_ordered4_transparent, convert_ordered8,
+        convert_ordered8_transparent, convert_posterize, convert_posterize_transparent,
+    },
     rgbcolor::RGBColor,
     texture::Texture,
 };
@@ -15,15 +18,12 @@ mod converters;
 mod rgbcolor;
 mod texture;
 
-#[derive(Args, Debug)]
-#[group(required = false, multiple = false)]
-struct ArgDithering {
-    #[arg(long)]
-    nodither: bool,
-    #[arg(long)]
-    fsdither: bool,
-    #[arg(long)]
-    ordered: Option<PathBuf>,
+#[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
+enum DitheringMethod {
+    No,
+    FS,
+    Ord4,
+    Ord8,
 }
 
 #[derive(Parser, Debug)]
@@ -34,8 +34,8 @@ struct ArgMain {
     output: Option<PathBuf>,
     #[arg(short, long)]
     transparent: bool,
-    #[command(flatten)]
-    dithering: ArgDithering,
+    #[arg(short, long, default_value = "no")]
+    dither: DitheringMethod,
 }
 
 fn save_texture(texture: &Texture, filename: String) -> Result<()> {
@@ -60,62 +60,42 @@ fn main() -> Result<()> {
         new_name
     };
     print!("{:?} -> {:?}", args.input, outfile);
-    if args.transparent || args.dithering.fsdither || args.dithering.ordered.is_some() {
+    if args.transparent || args.dither != DitheringMethod::No {
         print!(" ( ");
         if args.transparent {
             print!("Transparent");
-            if args.dithering.fsdither {
-                print!(", Floyd-Steinberg Dithering");
+            if args.dither != DitheringMethod::No {
+                print!(", ");
             }
-            if let Some(pattern) = args.dithering.ordered {
-                print!(", Ordered Dithering by {:?}", pattern);
-            }
-        } else {
-            if args.dithering.fsdither {
-                print!("Floyd-Steinberg Dithering");
-            }
-            if let Some(pattern) = args.dithering.ordered {
-                print!("Ordered Dithering by {:?}", pattern);
-            }
+        }
+        match args.dither {
+            DitheringMethod::FS => print!("Floyd-Steinberg Dithering"),
+            DitheringMethod::Ord4 => print!("Ordered 4x4 Dithering"),
+            DitheringMethod::Ord8 => print!("Ordered 8x8 Dithering"),
+            DitheringMethod::No => (),
         }
         print!(" ) ");
     }
 
     let tex = if args.transparent {
+        let dithering_method = match args.dither {
+            DitheringMethod::No => convert_posterize_transparent,
+            DitheringMethod::FS => convert_fs_transparent,
+            DitheringMethod::Ord4 => convert_ordered4_transparent,
+            DitheringMethod::Ord8 => convert_ordered8_transparent,
+        };
         let img = ImageReader::open(args.input)?.decode()?.to_rgba8();
-        if args.dithering.fsdither {
-            convert_fs_transparent(&img)
-        } else {
-            convert_posterize_transparent(&img)
-        }
+        dithering_method(&img)
     } else {
+        let dithering_method = match args.dither {
+            DitheringMethod::No => convert_posterize,
+            DitheringMethod::FS => convert_fs,
+            DitheringMethod::Ord4 => convert_ordered4,
+            DitheringMethod::Ord8 => convert_ordered8,
+        };
         let img = ImageReader::open(args.input)?.decode()?.to_rgb8();
-        if args.dithering.fsdither {
-            convert_fs(&img)
-        } else {
-            convert_posterize(&img)
-        }
+        dithering_method(&img)
     };
     tex.save(outfile)?;
-
-    /*let img = ImageReader::open("../assets/image1.png")?.decode()?.to_rgb8();
-    let tex = convert_fs(&img);
-    tex.save("../assets/image1.tex".to_string())?;
-
-    let tex = Texture::from_file("../assets/image1.tex".to_string())?;
-    save_texture(&tex, "../assets/image1_fromtex.png".to_string())?;*/
-
-    /*let img = ImageReader::open("../assets/transp1.png")?.decode()?.to_rgba8();
-    let tex = convert_fs_transparent(&img);
-    save_texture(&tex, "../assets/transp1_res.png".to_string())?;*/
-
-    /*let mut tex = Texture::new(2, 3);
-    tex.set(0, 0, Color16(65001));
-    tex.set(1, 0, Color16(65002));
-    tex.set(0, 1, Color16(65003));
-    tex.set(1, 1, Color16(65004));
-    tex.set(0, 2, Color16(65005));
-    tex.set(1, 2, Color16(65006));
-    tex.save("../assets/test.tex".to_string())?;*/
     Ok(())
 }

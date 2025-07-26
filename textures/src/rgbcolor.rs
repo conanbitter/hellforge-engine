@@ -1,4 +1,4 @@
-use std::{i32, ops};
+use std::ops;
 
 use image::{Rgb, Rgba};
 
