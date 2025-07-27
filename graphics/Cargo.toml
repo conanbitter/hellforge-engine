@@ -1,0 +1,12 @@
+[package]
+name = "graphics"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.98"
+env_logger = "0.11.8"
+log = "0.4.27"
+pollster = "0.4.0"
+wgpu = "26.0.1"
+winit = { version = "0.30.11", default-features = false, features = ["rwh_06"] }
