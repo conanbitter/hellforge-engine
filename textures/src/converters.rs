@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, error::Error, fmt::Display};
 
 use image::{RgbImage, RgbaImage};
 
@@ -8,6 +8,16 @@ use crate::{
     texture::Texture,
 };
 
+#[derive(Debug)]
+struct TransparentDontFitError;
+
+impl Display for TransparentDontFitError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "All colors are used, can't insert transparent color")
+    }
+}
+
+impl Error for TransparentDontFitError {}
 struct BackgroundColor {
     used_colors: HashSet<RGBColor>,
 }
@@ -34,10 +44,14 @@ impl BackgroundColor {
         RGBColor::BLACK,
     ];
 
-    fn find(&self) -> RGBColor {
+    fn find(&self) -> Result<RGBColor, TransparentDontFitError> {
+        if self.used_colors.len() > u16::MAX as usize {
+            return Err(TransparentDontFitError {});
+        }
+
         for prim_color in BackgroundColor::PRIMARY_COLORS {
             if !self.used_colors.contains(&prim_color) {
-                return prim_color;
+                return Ok(prim_color);
             }
         }
 
@@ -46,13 +60,13 @@ impl BackgroundColor {
                 for b in 0..31 {
                     let color = RGBColor::new(r, g, b);
                     if !self.used_colors.contains(&color) {
-                        return color;
+                        return Ok(color);
                     }
                 }
             }
         }
 
-        RGBColor::TRANSPARENT
+        return Err(TransparentDontFitError {});
     }
 }
 
@@ -68,7 +82,7 @@ pub fn convert_posterize(image: &RgbImage) -> Texture {
     result
 }
 
-pub fn convert_posterize_transparent(image: &RgbaImage) -> Texture {
+pub fn convert_posterize_transparent(image: &RgbaImage) -> anyhow::Result<Texture> {
     let mut result = Texture::new(image.width(), image.height());
     let mut bg_color_finder = BackgroundColor::new();
 
@@ -76,7 +90,7 @@ pub fn convert_posterize_transparent(image: &RgbaImage) -> Texture {
         bg_color_finder.add(RGBColor::from(color).to16bit());
     }
 
-    let bg_color = Color16::from(bg_color_finder.find());
+    let bg_color = Color16::from(bg_color_finder.find()?);
     result.transparent_color = Some(bg_color);
 
     for (x, y, color) in image.enumerate_pixels() {
@@ -87,7 +101,7 @@ pub fn convert_posterize_transparent(image: &RgbaImage) -> Texture {
         }
     }
 
-    result
+    Ok(result)
 }
 
 // endregion
@@ -124,7 +138,7 @@ pub fn convert_fs(image: &RgbImage) -> Texture {
     result
 }
 
-pub fn convert_fs_transparent(image: &RgbaImage) -> Texture {
+pub fn convert_fs_transparent(image: &RgbaImage) -> anyhow::Result<Texture> {
     let mut inner = RGBPlane::new(image.width(), image.height());
     let mut result = Texture::new(image.width(), image.height());
     let mut bg_color_finder = BackgroundColor::new();
@@ -159,7 +173,7 @@ pub fn convert_fs_transparent(image: &RgbaImage) -> Texture {
         }
     }
 
-    let bg_color = Color16::from(bg_color_finder.find());
+    let bg_color = Color16::from(bg_color_finder.find()?);
     result.transparent_color = Some(bg_color);
 
     for y in 0..result.height {
@@ -169,7 +183,7 @@ pub fn convert_fs_transparent(image: &RgbaImage) -> Texture {
             }
         }
     }
-    result
+    Ok(result)
 }
 
 // endregion
@@ -255,7 +269,7 @@ fn ordered_dithering(image: &RgbImage, pattern: &[f64; 64]) -> Texture {
     result
 }
 
-fn ordered_dithering_transparent(image: &RgbaImage, pattern: &[f64; 64]) -> Texture {
+fn ordered_dithering_transparent(image: &RgbaImage, pattern: &[f64; 64]) -> anyhow::Result<Texture> {
     let mut result = Texture::new(image.width(), image.height());
     let mut bg_color_finder = BackgroundColor::new();
     let mut mask = RGBPlane::new(image.width(), image.height());
@@ -278,7 +292,7 @@ fn ordered_dithering_transparent(image: &RgbaImage, pattern: &[f64; 64]) -> Text
         result.set(x, y, Color16::from(new_color));
     }
 
-    let bg_color = Color16::from(bg_color_finder.find());
+    let bg_color = Color16::from(bg_color_finder.find()?);
     result.transparent_color = Some(bg_color);
 
     for y in 0..result.height {
@@ -288,7 +302,7 @@ fn ordered_dithering_transparent(image: &RgbaImage, pattern: &[f64; 64]) -> Text
             }
         }
     }
-    result
+    Ok(result)
 }
 
 pub fn convert_ordered4(image: &RgbImage) -> Texture {
@@ -299,11 +313,11 @@ pub fn convert_ordered8(image: &RgbImage) -> Texture {
     ordered_dithering(image, &BAYER_FLOAT_8X8)
 }
 
-pub fn convert_ordered4_transparent(image: &RgbaImage) -> Texture {
+pub fn convert_ordered4_transparent(image: &RgbaImage) -> anyhow::Result<Texture> {
     ordered_dithering_transparent(image, &BAYER_FLOAT_4X4)
 }
 
-pub fn convert_ordered8_transparent(image: &RgbaImage) -> Texture {
+pub fn convert_ordered8_transparent(image: &RgbaImage) -> anyhow::Result<Texture> {
     ordered_dithering_transparent(image, &BAYER_FLOAT_8X8)
 }
 // endregion

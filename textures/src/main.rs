@@ -85,7 +85,7 @@ fn main() -> Result<()> {
             DitheringMethod::Ord8 => convert_ordered8_transparent,
         };
         let img = ImageReader::open(args.input)?.decode()?.to_rgba8();
-        dithering_method(&img)
+        dithering_method(&img)?
     } else {
         let dithering_method = match args.dither {
             DitheringMethod::No => convert_posterize,
