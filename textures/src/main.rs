@@ -96,6 +96,6 @@ fn main() -> Result<()> {
         let img = ImageReader::open(args.input)?.decode()?.to_rgb8();
         dithering_method(&img)
     };
-    tex.save(outfile)?;
+    tex.save_bin(outfile)?;
     Ok(())
 }

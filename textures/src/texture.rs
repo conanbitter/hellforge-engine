@@ -1,4 +1,4 @@
-use std::{fs, path::Path};
+use std::{fs, io::Write, path::Path};
 
 use anyhow::Result;
 use bincode::{Decode, Encode};
@@ -41,6 +41,25 @@ impl Texture {
         let mut file = fs::File::create(filename)?;
         let config = bincode::config::standard().with_fixed_int_encoding();
         bincode::encode_into_std_write(self, &mut file, config)?;
+        Ok(())
+    }
+
+    pub fn save_bin<P: AsRef<Path>>(&self, filename: P) -> Result<()> {
+        let mut file = fs::File::create(filename)?;
+        file.write_all(&self.width.to_le_bytes())?;
+        file.write_all(&self.height.to_le_bytes())?;
+        if let Some(transp_color) = self.transparent_color {
+            let yes = 1u8;
+            file.write_all(&yes.to_le_bytes())?;
+            file.write_all(&transp_color.0.to_le_bytes())?;
+        } else {
+            let no = 0u8;
+            file.write_all(&no.to_le_bytes())?;
+        }
+        for pixel in &self.data {
+            file.write_all(&pixel.0.to_le_bytes())?;
+        }
+        //file.write_all(&.is_some().to_le_bytes())?;
         Ok(())
     }
 }
