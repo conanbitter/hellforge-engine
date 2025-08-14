@@ -1,25 +1,28 @@
 use pomelo::pomelo;
 
 pomelo! {
-    %type INT i32;
-    %type STR String;
-    %type NAME String;
+    %token #[derive(Clone,Debug)] pub enum Token {};
 
-    package ::= INT;
-    package ::= STR;
-    package ::= NAME;
-    package ::= LPAREN;
-    package ::= RPAREN;
-    package ::= LBRACKET;
-    package ::= RBRACKET;
-    package ::= COMMA;
-    package ::= KW_PACKAGE;
-    package ::= KW_TEX;
-    package ::= KW_FONT;
-    package ::= KW_SPRITE;
-    package ::= KW_IMPORT;
-    package ::= KW_INTLEVEL;
-    package ::= KW_EXTLEVEL;
+    %type Int i32;
+    %type Str String;
+    %type Name String;
+
+    package ::= Int;
+    package ::= Str;
+    package ::= Name;
+    package ::= LParen;
+    package ::= RParen;
+    package ::= LBracket;
+    package ::= RBracket;
+    package ::= Comma;
+    package ::= Asterisk;
+    package ::= KwPackage;
+    package ::= KwTex;
+    package ::= KwFont;
+    package ::= KwSprite;
+    package ::= KwImport;
+    package ::= KwIntMap;
+    package ::= KwExtMap;
 
 }
 

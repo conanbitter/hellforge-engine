@@ -28,9 +28,7 @@ package level1 {
 		end_char 127,
 		borders auto,
 		line_height 16)
-}
 
-package level2 {
 	"/" (from "../assets/textures"){
 	
 		"/walls" (dither ord4, from "walls") {
@@ -42,10 +40,9 @@ package level2 {
 	
 	"/" (from "../assets/fonts"){
 		font main import "main.prj"
-		font caption (from sheet("caption", cols 16, rows 6),...)
+		font caption (from sheet("caption", cols 16, rows 6))
 		font menu (
 			from batch("menu/letter%04d.png"),
-			borders 2 3 5 4,
-			...)
+			borders 2 3 5 4)
 	}
 }
