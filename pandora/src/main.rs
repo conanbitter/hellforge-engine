@@ -2,6 +2,7 @@ use std::fs;
 
 use crate::{lexer::Lexer, parser::Parser};
 
+mod ast;
 mod lexer;
 mod parser;
 
@@ -17,7 +18,9 @@ fn main() -> anyhow::Result<()> {
         //println!("===={:?}", token);
         par.parse(token).unwrap();
     }
-    par.end_of_input().unwrap();
+    let tree = par.end_of_input().unwrap();
+
+    println!("Tree: {:?}", tree);
 
     Ok(())
 }

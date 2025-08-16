@@ -1,0 +1,51 @@
+use crate::parser::Token;
+
+#[derive(Debug)]
+pub enum PropConst {
+    Ord4,
+    Ord8,
+    Fs,
+    None,
+    Auto,
+    Error,
+}
+
+#[derive(Debug)]
+pub enum PropValue {
+    Int(i32),
+    Int2(i32, i32),
+    Int4(i32, i32, i32, i32),
+    Str(String),
+    Const(PropConst),
+    Empty,
+}
+
+pub type Props = Vec<(String, PropValue)>;
+
+#[derive(Debug)]
+pub enum ObjectType {
+    Texture,
+    Font,
+    Sprite,
+    IntMap,
+    ExtMap,
+}
+
+#[derive(Debug)]
+pub enum Node {
+    Package(String, Option<Props>, Vec<Node>),
+    Folder(String, Option<Props>, Vec<Node>),
+    Object(ObjectType, Option<String>, Option<Props>),
+    ObjectImport(ObjectType, Option<String>, String),
+}
+
+pub fn const_from_string(name: String) -> PropConst {
+    match name.to_lowercase().as_str() {
+        "ord4" => PropConst::Ord4,
+        "ord8" => PropConst::Ord8,
+        "fs" => PropConst::Fs,
+        "auto" => PropConst::Auto,
+        "none" => PropConst::None,
+        _ => PropConst::Error,
+    }
+}
