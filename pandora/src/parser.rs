@@ -50,8 +50,9 @@ pomelo! {
     value ::= int_list { println!("value ::= int_list"); };
     value ::= valobj { println!("value ::= valobj"); };
 
-    int_list ::= int_list Int { println!("int_list ::= int_list Int"); };
-    int_list ::= Int { println!("int_list ::= Int"); };
+    int_list ::= Int { println!("int_list ::= 1x Int"); };
+    int_list ::= Int Int { println!("int_list ::= 2x Int"); };
+    int_list ::= Int Int Int Int { println!("int_list ::= 4x Int"); };
 
     valobj ::= Name params { println!("valobj ::= Name params"); };
 
