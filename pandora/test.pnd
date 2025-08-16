@@ -40,9 +40,9 @@ package level1 {
 	
 	"/" (from "../assets/fonts"){
 		font main import "main.prj"
-		font caption (from sheet("caption", cols 16, rows 6))
+		font caption (from sheet(file "caption", cols 16, rows 6))
 		font menu (
-			from batch("menu/letter%04d.png"),
+			from batch(file "menu/letter%04d.png"),
 			borders 2 3 5 4)
 	}
 }
