@@ -1,6 +1,7 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::anyhow;
+use path_slash::PathBufExt;
 use shared::DitheringMethod;
 
 use crate::ast::{Node, PropValue, Props};
@@ -25,8 +26,8 @@ enum TaskKind {
 #[derive(Debug)]
 pub struct Task {
     name: Option<String>,
-    src: PathBuf,
-    dest: PathBuf,
+    src: String,
+    dest: String,
     kind: TaskKind,
 }
 
@@ -136,7 +137,7 @@ impl TaskParams {
     pub fn new() -> TaskParams {
         TaskParams {
             src: PathBuf::new(),
-            dest: PathBuf::new(),
+            dest: PathBuf::from("/"),
             params: HashMap::new(),
         }
     }
@@ -193,8 +194,8 @@ fn process_node(node: &Node, package: &mut PackageTask, context: &TaskParams) {
             };
             package.tasks.push(Task {
                 name: name.clone(),
-                src: own_context.src,
-                dest: own_context.dest,
+                src: own_context.src.to_slash().unwrap().into_owned(),
+                dest: own_context.dest.to_slash().unwrap().into_owned(),
                 kind,
             });
         }
