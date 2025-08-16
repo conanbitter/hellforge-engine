@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::{lexer::Lexer, parser::Parser};
+use crate::{lexer::Lexer, parser::Parser, tasks::generate_package};
 
 mod ast;
 mod lexer;
@@ -20,8 +20,13 @@ fn main() -> anyhow::Result<()> {
         par.parse(token).unwrap();
     }
     let tree = par.end_of_input().unwrap();
+    let package = generate_package(&tree)?;
 
-    println!("Tree: {:?}", tree);
+    println!("Package: {}", package.filename);
+    println!("Tasks:");
+    for task in package.tasks {
+        println!("    {:?}", task);
+    }
 
     Ok(())
 }

@@ -1,6 +1,6 @@
 use crate::tasks::ResType;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum PropConst {
     Ord4,
     Ord8,
@@ -10,7 +10,7 @@ pub enum PropConst {
     Error,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum PropValue {
     Int(i32),
     Int2(i32, i32),
