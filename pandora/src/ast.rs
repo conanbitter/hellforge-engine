@@ -1,4 +1,4 @@
-use crate::parser::Token;
+use crate::tasks::ResType;
 
 #[derive(Debug)]
 pub enum PropConst {
@@ -23,20 +23,11 @@ pub enum PropValue {
 pub type Props = Vec<(String, PropValue)>;
 
 #[derive(Debug)]
-pub enum ObjectType {
-    Texture,
-    Font,
-    Sprite,
-    IntMap,
-    ExtMap,
-}
-
-#[derive(Debug)]
 pub enum Node {
     Package(String, Option<Props>, Vec<Node>),
     Folder(String, Option<Props>, Vec<Node>),
-    Object(ObjectType, Option<String>, Option<Props>),
-    ObjectImport(ObjectType, Option<String>, String),
+    Object(ResType, Option<String>, Option<Props>),
+    ObjectImport(ResType, Option<String>, String),
 }
 
 pub fn const_from_string(name: String) -> PropConst {

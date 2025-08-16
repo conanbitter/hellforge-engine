@@ -1587,6 +1587,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "pomelo",
+ "shared",
 ]
 
 [[package]]
@@ -2052,6 +2053,10 @@ checksum = "bf41e0cfaf7226dca15e8197172c295a782857fcb97fad1808a166870dee75a3"
 dependencies = [
  "serde",
 ]
+
+[[package]]
+name = "shared"
+version = "0.1.0"
 
 [[package]]
 name = "shlex"

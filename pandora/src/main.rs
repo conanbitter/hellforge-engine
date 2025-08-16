@@ -5,6 +5,7 @@ use crate::{lexer::Lexer, parser::Parser};
 mod ast;
 mod lexer;
 mod parser;
+mod tasks;
 
 fn main() -> anyhow::Result<()> {
     let project_source = fs::read_to_string("test.pnd")?;

@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.99"
 pomelo = "0.2.1"
+shared = { path = "../shared" }

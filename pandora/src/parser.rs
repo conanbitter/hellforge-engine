@@ -3,6 +3,7 @@ use pomelo::pomelo;
 pomelo! {
     %include {
         use crate::ast::*;
+        use crate::tasks::ResType;
     }
     %token #[derive(Clone,Debug)] pub enum Token {};
 
@@ -14,7 +15,7 @@ pomelo! {
     %type param (String,PropValue);
     %type param_list Props;
     %type params Props;
-    %type class ObjectType;
+    %type class ResType;
     %type object Node;
     %type object_name Option<String>;
     %type root Node;
@@ -51,11 +52,11 @@ pomelo! {
     object_name ::= Name(n) { Some(n) };
     object_name ::= Asterisk { Some(String::from("*")) };
 
-    class ::= KwTex { ObjectType::Texture };
-    class ::= KwFont { ObjectType::Font };
-    class ::= KwSprite { ObjectType::Sprite };
-    class ::= KwIntMap { ObjectType::IntMap };
-    class ::= KwExtMap { ObjectType::ExtMap };
+    class ::= KwTex { ResType::Texture };
+    class ::= KwFont { ResType::Font };
+    class ::= KwSprite { ResType::Sprite };
+    class ::= KwIntMap { ResType::IntMap };
+    class ::= KwExtMap { ResType::ExtMap };
 
     params ::= LParen param_list(pl) RParen { pl };
     param_list ::= param_list(mut list) Comma param(p) { list.push(p); list };
