@@ -2,6 +2,8 @@ package level1 {
     #==========#
     # textures #
     #==========#
+
+	tex logo (from "../assets/ui/logo.tex", raw)
     
     "/walls" (dither ord4, from "../assets/textures/walls") {
         tex wall_brick
@@ -9,7 +11,7 @@ package level1 {
     }
     
     "/floors" {
-        tex intmap * (from "../assets/textures/floors/*.png", dither ord8)
+        tex * (from "../assets/textures/floors/*.png", dither ord8)
     }
     
     tex fence (dither fs, from "../assets/textures/other/", transparent)
@@ -45,4 +47,6 @@ package level1 {
             from batch(file "menu/letter%04d.png"),
             borders 2 3 5 4)
     }
+
+	intmap part1 (from "../levels/1/part1.int")
 }

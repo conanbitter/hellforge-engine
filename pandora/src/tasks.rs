@@ -6,7 +6,7 @@ use shared::DitheringMethod;
 
 use crate::ast::{Node, PropConst, PropValue, Props};
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum ResType {
     Texture,
     Font,
@@ -281,31 +281,41 @@ fn process_node(node: &Node, package: &mut PackageTask, context: &TaskParams) {
             if let Some(someprops) = props {
                 own_context.append_props(someprops, None);
             }
-            let kind = match res_type {
-                ResType::Texture => {
-                    let mut tex_params = TextureParams::default();
-                    tex_params.apply(&own_context);
-                    TaskKind::TextureConvert(tex_params)
-                }
-                ResType::Font => {
-                    let mut font_params = FontParams::default();
-                    font_params.apply(&own_context);
-                    TaskKind::FontConvert(font_params)
-                }
-                ResType::Sprite => {
-                    let mut sprite_params = SpriteParams::default();
-                    sprite_params.apply(&own_context);
-                    TaskKind::SpriteConvert(sprite_params)
-                }
-                ResType::IntMap => TaskKind::CopyFile(ResType::IntMap),
-                ResType::ExtMap => TaskKind::CopyFile(ResType::ExtMap),
-            };
-            package.tasks.push(Task {
-                name: name.clone(),
-                src: own_context.src.to_slash().unwrap().into_owned(),
-                dest: own_context.dest.to_slash().unwrap().into_owned(),
-                kind,
-            });
+
+            if own_context.params.contains_key("raw") {
+                package.tasks.push(Task {
+                    name: name.clone(),
+                    src: own_context.src.to_slash().unwrap().into_owned(),
+                    dest: own_context.dest.to_slash().unwrap().into_owned(),
+                    kind: TaskKind::CopyFile(*res_type),
+                });
+            } else {
+                let kind = match res_type {
+                    ResType::Texture => {
+                        let mut tex_params = TextureParams::default();
+                        tex_params.apply(&own_context);
+                        TaskKind::TextureConvert(tex_params)
+                    }
+                    ResType::Font => {
+                        let mut font_params = FontParams::default();
+                        font_params.apply(&own_context);
+                        TaskKind::FontConvert(font_params)
+                    }
+                    ResType::Sprite => {
+                        let mut sprite_params = SpriteParams::default();
+                        sprite_params.apply(&own_context);
+                        TaskKind::SpriteConvert(sprite_params)
+                    }
+                    ResType::IntMap => TaskKind::CopyFile(ResType::IntMap),
+                    ResType::ExtMap => TaskKind::CopyFile(ResType::ExtMap),
+                };
+                package.tasks.push(Task {
+                    name: name.clone(),
+                    src: own_context.src.to_slash().unwrap().into_owned(),
+                    dest: own_context.dest.to_slash().unwrap().into_owned(),
+                    kind,
+                });
+            }
         }
         _ => {}
     }
