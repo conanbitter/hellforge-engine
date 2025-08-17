@@ -4,6 +4,7 @@ pomelo! {
     %include {
         use crate::ast::*;
         use crate::tasks::ResType;
+        use super::ParserState;
     }
     %token #[derive(Clone,Debug)] pub enum Token {};
 
@@ -24,11 +25,22 @@ pomelo! {
     %type package Node;
     %type item_list Vec<Node>;
 
+    %extra_argument ParserState;
+
     %syntax_error {
-        println!("[Error] Got {:?}, expecting:", token);
-        for extoken in expected{
-            println!("{}",extoken.name)
+        if let Some(sometoken) = token{
+            print!("[Ln {}, Col {}] ERROR: got {}, expecting", extra.line, extra.col, sometoken);
+        }else{
+            print!("[Ln {}, Col {}] ERROR: expecting", extra.line, extra.col);
         }
+        for extoken in expected{
+            if let Some(sometoken) = extoken.token{
+                print!(" {}", sometoken);
+            }else{
+                print!(" {}", extoken.name);
+            }
+        }
+        println!();
         Err(())
     }
 
@@ -79,3 +91,31 @@ pomelo! {
 
 pub use parser::Parser;
 pub use parser::Token;
+
+impl std::fmt::Display for parser::Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Token::Int(_) => write!(f, "number"),
+            Token::Str(_) => write!(f, "string"),
+            Token::Name(_) => write!(f, "name"),
+            Token::KwPackage => write!(f, "'package'"),
+            Token::LBracket => write!(f, "'{{'"),
+            Token::RBracket => write!(f, "'}}'"),
+            Token::KwImport => write!(f, "'import'"),
+            Token::Asterisk => write!(f, "'*'"),
+            Token::KwTex => write!(f, "'tex'"),
+            Token::KwFont => write!(f, "'font'"),
+            Token::KwSprite => write!(f, "'sprite'"),
+            Token::KwIntMap => write!(f, "'intmap'"),
+            Token::KwExtMap => write!(f, "'extmap'"),
+            Token::LParen => write!(f, "'('"),
+            Token::RParen => write!(f, "')'"),
+            Token::Comma => write!(f, "','"),
+        }
+    }
+}
+
+pub struct ParserState {
+    pub line: u32,
+    pub col: u32,
+}

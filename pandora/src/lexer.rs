@@ -5,6 +5,8 @@ pub struct Lexer<'a> {
     data: Chars<'a>,
     cur_char: char,
     eof: bool,
+    line: u32,
+    col: u32,
 }
 
 enum NameVariant {
@@ -18,12 +20,14 @@ impl<'a> Lexer<'a> {
             data: source.chars(),
             cur_char: '\0',
             eof: false,
+            line: 1,
+            col: 1,
         };
         result.forward();
         result
     }
 
-    pub fn next(&mut self) -> Option<Token> {
+    pub fn next(&mut self) -> Option<(Token, u32, u32)> {
         self.skip_spaces();
         if self.eof {
             return None;
@@ -36,38 +40,41 @@ impl<'a> Lexer<'a> {
             }
         }
 
+        let line = self.line;
+        let col = self.col - 1;
+
         match self.cur_char {
-            '0'..='9' => Some(Token::Int(self.read_int())),
-            '"' => Some(Token::Str(self.read_str())),
+            '0'..='9' => Some((Token::Int(self.read_int()), line, col)),
+            '"' => Some((Token::Str(self.read_str()), line, col)),
             '(' => {
                 self.forward();
-                Some(Token::LParen)
+                Some((Token::LParen, line, col))
             }
             ')' => {
                 self.forward();
-                Some(Token::RParen)
+                Some((Token::RParen, line, col))
             }
             '{' => {
                 self.forward();
-                Some(Token::LBracket)
+                Some((Token::LBracket, line, col))
             }
             '}' => {
                 self.forward();
-                Some(Token::RBracket)
+                Some((Token::RBracket, line, col))
             }
             ',' => {
                 self.forward();
-                Some(Token::Comma)
+                Some((Token::Comma, line, col))
             }
             '*' => {
                 self.forward();
-                Some(Token::Asterisk)
+                Some((Token::Asterisk, line, col))
             }
             _ => {
                 if self.cur_char.is_ascii_alphabetic() {
                     match self.read_name() {
-                        NameVariant::Keyword(kw) => Some(kw),
-                        NameVariant::Name(name) => Some(Token::Name(name)),
+                        NameVariant::Keyword(kw) => Some((kw, line, col)),
+                        NameVariant::Name(name) => Some((Token::Name(name), line, col)),
                     }
                 } else {
                     None
@@ -79,6 +86,12 @@ impl<'a> Lexer<'a> {
     fn forward(&mut self) {
         if let Some(next_char) = self.data.next() {
             self.cur_char = next_char;
+            if next_char == '\n' {
+                self.line += 1;
+                self.col = 1;
+            } else {
+                self.col += 1;
+            }
         } else {
             self.eof = true;
         }

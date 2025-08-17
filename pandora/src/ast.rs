@@ -1,6 +1,6 @@
 use crate::tasks::ResType;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum PropConst {
     Ord4,
     Ord8,

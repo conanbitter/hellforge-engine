@@ -1,48 +1,48 @@
 package level1 {
-	#==========#
-	# textures #
-	#==========#
-	
-	"/walls" (dither ord4, from "../assets/textures/walls") {
-		tex wall_brick
-		tex wall_stone
-	}
-	
-	"/floors" {
-		tex * (from "../assets/textures/floors/*.png", dither ord8)
-	}
-	
-	tex fence (dither fs, from "../assets/textures/other/", transparent)
-	tex fence2 (from "../assets/textures/other/other_fence.png", dither fs, transparent)
-	
-	#=======#
-	# fonts #
-	#=======#
-	
-	font main (
-		from "../assets/fonts/main.png",
-		cols 16,
-		rows 6,
-		fallback_char 127,
-		start_char 32,
-		end_char 127,
-		borders auto,
-		line_height 16)
+    #==========#
+    # textures #
+    #==========#
+    
+    "/walls" (dither ord4, from "../assets/textures/walls") {
+        tex wall_brick
+        tex wall_stone
+    }
+    
+    "/floors" {
+        tex intmap * (from "../assets/textures/floors/*.png", dither ord8)
+    }
+    
+    tex fence (dither fs, from "../assets/textures/other/", transparent)
+    tex fence2 (from "../assets/textures/other/other_fence.png", dither fs, transparent)
+    
+    #=======#
+    # fonts #
+    #=======#
+    
+    font main (
+        from "../assets/fonts/main.png",
+        cols 16,
+        rows 6,
+        fallback_char 127,
+        start_char 32,
+        end_char 127,
+        borders auto,
+        line_height 16)
 
-	"/" (from "../assets/textures"){
-	
-		"/walls" (dither ord4, from "walls") {
-			tex wall_brick
-			tex wall_stone
-		}
-		
-	}
-	
-	"/" (from "../assets/fonts"){
-		font main import "main.prj"
-		font caption (from sheet(file "caption", cols 16, rows 6))
-		font menu (
-			from batch(file "menu/letter%04d.png"),
-			borders 2 3 5 4)
-	}
+    "/" (from "../assets/textures"){
+    
+        "/walls" (dither ord4, from "walls") {
+            tex wall_brick
+            tex wall_stone
+        }
+        
+    }
+    
+    "/" (from "../assets/fonts"){
+        font main import "main.prj"
+        font caption (from sheet(file "caption", cols 16, rows 6))
+        font menu (
+            from batch(file "menu/letter%04d.png"),
+            borders 2 3 5 4)
+    }
 }
