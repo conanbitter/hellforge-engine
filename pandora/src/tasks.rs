@@ -4,7 +4,7 @@ use anyhow::anyhow;
 use path_slash::PathBufExt;
 use shared::DitheringMethod;
 
-use crate::ast::{Node, PropValue, Props};
+use crate::ast::{Node, PropConst, PropValue, Props};
 
 #[derive(Debug)]
 pub enum ResType {
@@ -51,7 +51,7 @@ struct FontParams {
     end_char: u32,
     fallback_char: u32,
     letter_space: i32,
-    line_space: i32,
+    line_height: i32,
 }
 
 #[derive(Debug)]
@@ -75,7 +75,15 @@ impl Default for TextureParams {
 }
 
 impl TextureParams {
-    pub fn apply(&mut self, params: &TaskParams) {}
+    pub fn apply(&mut self, params: &TaskParams) {
+        if params.params.contains_key("transparent") {
+            self.transparent = true;
+        }
+
+        if let Some(&PropValue::Const(kind)) = params.params.get("dither") {
+            self.dithering = convert_dithering(kind);
+        }
+    }
 }
 
 impl Default for FontParams {
@@ -93,13 +101,79 @@ impl Default for FontParams {
             end_char: 255,
             fallback_char: 255,
             letter_space: 1,
-            line_space: 0,
+            line_height: 0,
         }
     }
 }
 
 impl FontParams {
-    pub fn apply(&mut self, params: &TaskParams) {}
+    pub fn apply(&mut self, params: &TaskParams) {
+        if params.params.contains_key("transparent") {
+            self.transparent = true;
+        }
+
+        if let Some(&PropValue::Const(kind)) = params.params.get("dither") {
+            self.dithering = convert_dithering(kind);
+        }
+
+        if let Some(&PropValue::Int(val)) = params.params.get("cols") {
+            self.cols = val as u32;
+        }
+
+        if let Some(&PropValue::Int(val)) = params.params.get("rows") {
+            self.rows = val as u32;
+        }
+
+        if let Some(&PropValue::Int(val)) = params.params.get("start_char") {
+            self.start_char = val as u32;
+        }
+
+        if let Some(&PropValue::Int(val)) = params.params.get("end_char") {
+            self.end_char = val as u32;
+        }
+
+        if let Some(&PropValue::Int(val)) = params.params.get("fallback_char") {
+            self.fallback_char = val as u32;
+        }
+
+        if let Some(&PropValue::Int(val)) = params.params.get("letter_space") {
+            self.letter_space = val;
+        }
+
+        if let Some(&PropValue::Int(val)) = params.params.get("line_height") {
+            self.line_height = val;
+        }
+
+        if let Some(borders) = params.params.get("borders") {
+            match borders {
+                PropValue::Const(PropConst::Auto) => {
+                    self.border_left = None;
+                    self.border_right = None;
+                    self.border_top = None;
+                    self.border_bottom = None;
+                }
+                &PropValue::Int(v) => {
+                    self.border_left = Some(v as u32);
+                    self.border_right = Some(v as u32);
+                    self.border_top = Some(v as u32);
+                    self.border_bottom = Some(v as u32);
+                }
+                &PropValue::Int2(v1, v2) => {
+                    self.border_left = Some(v1 as u32);
+                    self.border_right = Some(v2 as u32);
+                    self.border_top = None;
+                    self.border_bottom = None;
+                }
+                &PropValue::Int4(v1, v2, v3, v4) => {
+                    self.border_left = Some(v1 as u32);
+                    self.border_right = Some(v2 as u32);
+                    self.border_top = Some(v3 as u32);
+                    self.border_bottom = Some(v4 as u32);
+                }
+                _ => {}
+            }
+        }
+    }
 }
 
 impl Default for SpriteParams {
@@ -117,7 +191,41 @@ impl Default for SpriteParams {
 }
 
 impl SpriteParams {
-    pub fn apply(&mut self, params: &TaskParams) {}
+    pub fn apply(&mut self, params: &TaskParams) {
+        if params.params.contains_key("transparent") {
+            self.transparent = true;
+        }
+
+        if let Some(&PropValue::Const(kind)) = params.params.get("dither") {
+            self.dithering = convert_dithering(kind);
+        }
+
+        if let Some(&PropValue::Int(val)) = params.params.get("cols") {
+            self.cols = val as u32;
+        }
+
+        if let Some(&PropValue::Int(val)) = params.params.get("rows") {
+            self.rows = val as u32;
+        }
+
+        if let Some(&PropValue::Int2(vx, vy)) = params.params.get("origin") {
+            self.origin_x = vx;
+            self.origin_y = vy;
+        }
+
+        if let Some(&PropValue::Int(val)) = params.params.get("fps") {
+            self.frame_time = 1.0 / (val as f32);
+        }
+    }
+}
+
+fn convert_dithering(input: PropConst) -> DitheringMethod {
+    match input {
+        PropConst::Ord4 => DitheringMethod::Ord4,
+        PropConst::Ord8 => DitheringMethod::Ord8,
+        PropConst::Fs => DitheringMethod::FS,
+        _ => DitheringMethod::No,
+    }
 }
 
 #[derive(Debug)]
