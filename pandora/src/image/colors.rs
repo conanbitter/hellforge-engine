@@ -1,5 +1,5 @@
 use image::{Rgb, Rgba};
-use std::{cmp::max, ops};
+use std::{cmp::min, ops};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Color16(pub u16);
@@ -77,9 +77,9 @@ impl ops::Mul<f64> for ColorRGB {
 
 impl From<ColorRGB> for Color16 {
     fn from(color: ColorRGB) -> Self {
-        let r = max(31, (color.r.clamp(0.0, 1.0) * 31.0) as u16);
-        let g = max(63, (color.g.clamp(0.0, 1.0) * 63.0) as u16);
-        let b = max(31, (color.b.clamp(0.0, 1.0) * 31.0) as u16);
+        let r = min(31, (color.r.clamp(0.0, 1.0) * 31.0) as u16);
+        let g = min(63, (color.g.clamp(0.0, 1.0) * 63.0) as u16);
+        let b = min(31, (color.b.clamp(0.0, 1.0) * 31.0) as u16);
         let result = r << 11 | g << 5 | b;
         Color16(result)
     }

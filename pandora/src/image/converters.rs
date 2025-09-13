@@ -239,7 +239,7 @@ const BAYER_FLOAT_4X4: [f64; 64] = for_bayer4();
 
 const BAYER_FLOAT_8X8: [f64; 64] = for_bayer8();
 
-const COLOR_RADIUS: ColorRGB = ColorRGB::new(255.0 / 31.0, 255.0 / 63.0, 255.0 / 31.0);
+const COLOR_RADIUS: ColorRGB = ColorRGB::new(1.0 / 31.0, 1.0 / 63.0, 1.0 / 31.0);
 
 fn get_wrapped(pattern: &[f64; 64], x: u32, y: u32) -> f64 {
     let x = (x % 8) as usize;
