@@ -1,9 +1,78 @@
 use image::{RgbImage, RgbaImage};
+use std::{collections::HashSet, error::Error, fmt::Display};
 
 use crate::image::{
     colors::{Color16, ColorRGB, PlaneRGB},
     images::Image16,
 };
+
+// region: Transparent color
+
+#[derive(Debug)]
+struct TransparentDontFitError;
+
+impl Display for TransparentDontFitError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "All colors are used, can't insert transparent color")
+    }
+}
+
+impl Error for TransparentDontFitError {}
+struct BackgroundColor {
+    used_colors: HashSet<Color16>,
+}
+
+impl BackgroundColor {
+    fn new() -> BackgroundColor {
+        BackgroundColor {
+            used_colors: HashSet::new(),
+        }
+    }
+
+    fn add(&mut self, color: Color16) {
+        self.used_colors.insert(color);
+    }
+
+    const PRIMARY_COLORS: [Color16; 8] = [
+        Color16::MAGENTA,
+        Color16::CYAN,
+        Color16::YELLOW,
+        Color16::RED,
+        Color16::BLUE,
+        Color16::GREEN,
+        Color16::WHITE,
+        Color16::BLACK,
+    ];
+
+    fn find(&self) -> Result<Color16, TransparentDontFitError> {
+        if self.used_colors.len() > u16::MAX as usize {
+            return Err(TransparentDontFitError {});
+        }
+
+        for prim_color in BackgroundColor::PRIMARY_COLORS {
+            if !self.used_colors.contains(&prim_color) {
+                return Ok(prim_color);
+            }
+        }
+
+        for r in 0..31 {
+            for g in 0..63 {
+                for b in 0..31 {
+                    let color = Color16::new(r, g, b);
+                    if !self.used_colors.contains(&color) {
+                        return Ok(color);
+                    }
+                }
+            }
+        }
+
+        return Err(TransparentDontFitError {});
+    }
+}
+
+// endregion
+
+// region: posterize
 
 pub fn convert_posterize(image: &RgbImage) -> Image16 {
     let mut result = Image16::new(image.width(), image.height());
@@ -14,6 +83,32 @@ pub fn convert_posterize(image: &RgbImage) -> Image16 {
 
     result
 }
+
+pub fn convert_posterize_transparent(image: &RgbaImage) -> anyhow::Result<Image16> {
+    let mut result = Image16::new(image.width(), image.height());
+    let mut bg_color_finder = BackgroundColor::new();
+
+    for (_, _, color) in image.enumerate_pixels() {
+        bg_color_finder.add(Color16::from(ColorRGB::from(color)));
+    }
+
+    let bg_color = bg_color_finder.find()?;
+    result.transparent_color = Some(bg_color);
+
+    for (x, y, color) in image.enumerate_pixels() {
+        if color[3] > 128 {
+            result.set(x, y, Color16::from(ColorRGB::from(color)));
+        } else {
+            result.set(x, y, bg_color);
+        }
+    }
+
+    Ok(result)
+}
+
+// endregion
+
+// region: floyd-steinberg
 
 pub fn convert_fs(image: &RgbImage) -> Image16 {
     let mut inner = PlaneRGB::new(image.width(), image.height());
@@ -40,6 +135,55 @@ pub fn convert_fs(image: &RgbImage) -> Image16 {
     }
     result
 }
+
+pub fn convert_fs_transparent(image: &RgbaImage) -> anyhow::Result<Image16> {
+    let mut inner = PlaneRGB::new(image.width(), image.height());
+    let mut result = Image16::new(image.width(), image.height());
+    let mut bg_color_finder = BackgroundColor::new();
+
+    for (x, y, color) in image.enumerate_pixels() {
+        if color[3] < 128 {
+            inner.set(x, y, ColorRGB::TRANSPARENT);
+            continue;
+        }
+
+        let original_color = ColorRGB::from(color);
+        let correction = inner.get(x, y);
+        let old_color = (original_color + correction).clamp();
+        let new_color = Color16::from(old_color);
+        bg_color_finder.add(new_color);
+        result.set(x, y, new_color);
+        let error = old_color - ColorRGB::from(new_color);
+        if x < image.width() - 1 {
+            inner.add(x + 1, y, error * (7.0 / 16.0));
+        }
+        if y < image.height() - 1 {
+            if x > 0 {
+                inner.add(x - 1, y + 1, error * (3.0 / 16.0));
+            }
+            inner.add(x, y + 1, error * (5.0 / 16.0));
+            if x < image.width() - 1 {
+                inner.add(x + 1, y + 1, error * (1.0 / 16.0));
+            }
+        }
+    }
+
+    let bg_color = Color16::from(bg_color_finder.find()?);
+    result.transparent_color = Some(bg_color);
+
+    for y in 0..result.height {
+        for x in 0..result.width {
+            if inner.get(x, y).is_transparent() {
+                result.set(x, y, bg_color);
+            }
+        }
+    }
+    Ok(result)
+}
+
+// endregion
+
+// region: ordered
 
 const BAYER_INT_4X4: [i32; 16] = [
     0, 8, 2, 10, //
@@ -114,3 +258,53 @@ fn ordered_dithering(image: &RgbImage, pattern: &[f64; 64]) -> Image16 {
     }
     result
 }
+
+fn ordered_dithering_transparent(image: &RgbaImage, pattern: &[f64; 64]) -> anyhow::Result<Image16> {
+    let mut result = Image16::new(image.width(), image.height());
+    let mut bg_color_finder = BackgroundColor::new();
+    let mut mask = PlaneRGB::new(image.width(), image.height());
+
+    for (x, y, color) in image.enumerate_pixels() {
+        if color[3] < 128 {
+            mask.set(x, y, ColorRGB::TRANSPARENT);
+            continue;
+        }
+
+        let original_color = ColorRGB::from(color);
+        let correction = get_wrapped(pattern, x, y);
+        let old_color = (original_color + COLOR_RADIUS * correction).clamp();
+        let new_color = Color16::from(old_color);
+        bg_color_finder.add(new_color);
+        result.set(x, y, new_color);
+    }
+
+    let bg_color = bg_color_finder.find()?;
+    result.transparent_color = Some(bg_color);
+
+    for y in 0..result.height {
+        for x in 0..result.width {
+            if mask.get(x, y).is_transparent() {
+                result.set(x, y, bg_color);
+            }
+        }
+    }
+    Ok(result)
+}
+
+pub fn convert_ordered4(image: &RgbImage) -> Image16 {
+    ordered_dithering(image, &BAYER_FLOAT_4X4)
+}
+
+pub fn convert_ordered8(image: &RgbImage) -> Image16 {
+    ordered_dithering(image, &BAYER_FLOAT_8X8)
+}
+
+pub fn convert_ordered4_transparent(image: &RgbaImage) -> anyhow::Result<Image16> {
+    ordered_dithering_transparent(image, &BAYER_FLOAT_4X4)
+}
+
+pub fn convert_ordered8_transparent(image: &RgbaImage) -> anyhow::Result<Image16> {
+    ordered_dithering_transparent(image, &BAYER_FLOAT_8X8)
+}
+
+// endregion

@@ -1,7 +1,7 @@
 use image::{Rgb, Rgba};
 use std::{cmp::max, ops};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Color16(pub u16);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -23,6 +23,12 @@ impl ColorRGB {
             b: self.b.clamp(0.0, 1.0),
         }
     }
+
+    pub fn is_transparent(self) -> bool {
+        self.r < 0.0
+    }
+
+    pub const TRANSPARENT: ColorRGB = ColorRGB::new(-1.0, 0.0, 0.0);
 }
 
 impl ops::AddAssign<ColorRGB> for ColorRGB {
@@ -98,8 +104,18 @@ impl From<&Rgb<u8>> for ColorRGB {
     }
 }
 
+impl From<&Rgba<u8>> for ColorRGB {
+    fn from(value: &Rgba<u8>) -> Self {
+        ColorRGB {
+            r: value[0] as f64 / 255.0,
+            g: value[1] as f64 / 255.0,
+            b: value[2] as f64 / 255.0,
+        }
+    }
+}
+
 impl Color16 {
-    const fn new(r: u16, g: u16, b: u16) -> Color16 {
+    pub const fn new(r: u16, g: u16, b: u16) -> Color16 {
         Color16((r & 0b11111) << 11 | (g & 0b111111) << 5 | (b & 0b11111))
     }
 
