@@ -24,11 +24,19 @@ enum TaskKind {
 }
 
 #[derive(Debug)]
+enum SourceEx {
+    Single,
+    Batch,
+    Sheet(u32, u32),
+}
+
+#[derive(Debug)]
 pub struct Task {
     name: Option<String>,
     src: String,
     dest: String,
     kind: TaskKind,
+    src_ex: SourceEx,
 }
 
 #[derive(Debug)]
@@ -258,6 +266,8 @@ impl TaskParams {
             if key == "from" {
                 if let PropValue::Str(path) = value {
                     self.src.push(path);
+                } else {
+                    self.params.insert(key.clone(), value.clone());
                 }
             } else {
                 self.params.insert(key.clone(), value.clone());
@@ -281,6 +291,44 @@ fn process_node(node: &Node, package: &mut PackageTask, context: &TaskParams) {
             if let Some(someprops) = props {
                 own_context.append_props(someprops, None);
             }
+            let src_ex = {
+                if let Some(PropValue::ValObj(name, props)) = own_context.params.get("from") {
+                    let mut file: String = "".to_string();
+                    let mut cols: u32 = 16;
+                    let mut rows: u32 = 16;
+
+                    for (key, value) in props {
+                        match key.as_str() {
+                            "file" => {
+                                if let PropValue::Str(filename) = value {
+                                    file = filename.to_string();
+                                }
+                            }
+                            "cols" => {
+                                if let PropValue::Int(val) = value {
+                                    cols = *val as u32;
+                                }
+                            }
+                            "rows" => {
+                                if let PropValue::Int(val) = value {
+                                    rows = *val as u32;
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    own_context.src.push(file);
+
+                    match name.as_str() {
+                        "batch" => SourceEx::Batch,
+                        "sheet" => SourceEx::Sheet(cols, rows),
+                        _ => SourceEx::Single,
+                    }
+                } else {
+                    SourceEx::Single
+                }
+            };
 
             if own_context.params.contains_key("raw") {
                 package.tasks.push(Task {
@@ -288,6 +336,7 @@ fn process_node(node: &Node, package: &mut PackageTask, context: &TaskParams) {
                     src: own_context.src.to_slash().unwrap().into_owned(),
                     dest: own_context.dest.to_slash().unwrap().into_owned(),
                     kind: TaskKind::CopyFile(*res_type),
+                    src_ex,
                 });
             } else {
                 let kind = match res_type {
@@ -314,6 +363,7 @@ fn process_node(node: &Node, package: &mut PackageTask, context: &TaskParams) {
                     src: own_context.src.to_slash().unwrap().into_owned(),
                     dest: own_context.dest.to_slash().unwrap().into_owned(),
                     kind,
+                    src_ex,
                 });
             }
         }

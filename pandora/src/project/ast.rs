@@ -17,6 +17,7 @@ pub enum PropValue {
     Int4(i32, i32, i32, i32),
     Str(String),
     Const(PropConst),
+    ValObj(String, Props),
     Empty,
 }
 

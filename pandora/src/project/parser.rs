@@ -24,6 +24,7 @@ pomelo! {
     %type folder Node;
     %type package Node;
     %type item_list Vec<Node>;
+    %type valobj PropValue;
 
     %extra_argument ParserState;
 
@@ -79,14 +80,13 @@ pomelo! {
     value ::= Str(st) { PropValue::Str(st) };
     value ::= Name(n) { PropValue::Const(const_from_string(n)) };
     value ::= int_list(il) { il };
-    value ::= valobj { println!("value ::= valobj"); PropValue::Empty };
+    value ::= valobj(vo) { vo };
 
     int_list ::= Int(v) { PropValue::Int(v) };
     int_list ::= Int(v1) Int(v2) { PropValue::Int2(v1,v2) };
     int_list ::= Int(v1) Int(v2) Int(v3) Int(v4) { PropValue::Int4(v1,v2,v3,v4) };
 
-    valobj ::= Name params { println!("valobj ::= Name params"); };
-
+    valobj ::= Name(n) params(pl) { PropValue::ValObj(n, pl) };
 }
 
 pub use parser::Parser;
