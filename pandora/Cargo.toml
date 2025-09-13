@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.99"
+image = "0.25.8"
 path-slash = "0.2.1"
 pomelo = "0.2.1"
 shared = { path = "../shared" }
