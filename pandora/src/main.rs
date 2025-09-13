@@ -1,16 +1,9 @@
 use std::fs;
 
-use crate::{
-    lexer::Lexer,
-    parser::{Parser, ParserState},
-    tasks::generate_package,
-};
+use crate::project::tasks_from_string;
 
-mod ast;
 mod image;
-mod lexer;
-mod parser;
-mod tasks;
+mod project;
 
 fn main() -> anyhow::Result<()> {
     /*match env::current_dir() {
@@ -27,17 +20,7 @@ fn main() -> anyhow::Result<()> {
 
     //let project_source = String::from("123 453 \"Hel\\\\lo !\"  sd (tex) 23");
 
-    let mut par = Parser::new(ParserState { line: 1, col: 1 });
-    let mut lex = Lexer::new(&project_source);
-
-    while let Some((token, line, col)) = lex.next() {
-        //println!("===={:?}", token);
-        par.extra_mut().line = line;
-        par.extra_mut().col = col;
-        par.parse(token).unwrap();
-    }
-    let tree = par.end_of_input().unwrap().0;
-    let package = generate_package(&tree)?;
+    let package = tasks_from_string(&project_source)?;
 
     println!("Package: {}", package.filename);
     println!("Tasks:");

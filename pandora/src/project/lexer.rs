@@ -1,6 +1,6 @@
 use std::str::Chars;
 
-use crate::parser::Token;
+use crate::project::parser::Token;
 pub struct Lexer<'a> {
     data: Chars<'a>,
     cur_char: char,

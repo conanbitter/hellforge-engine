@@ -2,8 +2,8 @@ use pomelo::pomelo;
 
 pomelo! {
     %include {
-        use crate::ast::*;
-        use crate::tasks::ResType;
+        use crate::project::ast::*;
+        use crate::project::tasks::ResType;
         use super::ParserState;
     }
     %token #[derive(Clone,Debug)] pub enum Token {};

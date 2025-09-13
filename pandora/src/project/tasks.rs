@@ -4,7 +4,7 @@ use anyhow::anyhow;
 use path_slash::PathBufExt;
 use shared::DitheringMethod;
 
-use crate::ast::{Node, PropConst, PropValue, Props};
+use crate::project::ast::{Node, PropConst, PropValue, Props};
 
 #[derive(Debug, Copy, Clone)]
 pub enum ResType {

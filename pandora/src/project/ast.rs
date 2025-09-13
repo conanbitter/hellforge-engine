@@ -1,4 +1,4 @@
-use crate::tasks::ResType;
+use crate::project::tasks::ResType;
 
 #[derive(Debug, Clone, Copy)]
 pub enum PropConst {
