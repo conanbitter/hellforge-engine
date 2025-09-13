@@ -7,6 +7,7 @@ use crate::{
 };
 
 mod ast;
+mod image;
 mod lexer;
 mod parser;
 mod tasks;
