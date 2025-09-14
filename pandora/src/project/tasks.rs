@@ -371,7 +371,96 @@ fn process_node(node: &Node, package: &mut PackageTask, context: &TaskParams) {
     }
 }
 
-pub fn generate_package(root: &Node) -> anyhow::Result<PackageTask> {
+fn process_valobj(context: &TaskParams) -> (Option<String>, SourceEx) {
+    if let Some(PropValue::ValObj(name, props)) = context.params.get("from") {
+        let mut file: Option<String> = None;
+        let mut cols: u32 = 16;
+        let mut rows: u32 = 16;
+
+        for (key, value) in props {
+            match key.as_str() {
+                "file" => {
+                    if let PropValue::Str(filename) = value {
+                        file = Some(filename.to_string());
+                    }
+                }
+                "cols" => {
+                    if let PropValue::Int(val) = value {
+                        cols = *val as u32;
+                    }
+                }
+                "rows" => {
+                    if let PropValue::Int(val) = value {
+                        rows = *val as u32;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        match name.as_str() {
+            "batch" => (file, SourceEx::Batch),
+            "sheet" => (file, SourceEx::Sheet(cols, rows)),
+            _ => (file, SourceEx::Single),
+        }
+    } else {
+        (None, SourceEx::Single)
+    }
+}
+
+fn process_object(node: &Node, context: &TaskParams) -> anyhow::Result<Task> {
+    let mut own_context = context.clone();
+    if let Node::Object(res_type, name, props) = node {
+        if let Some(someprops) = props {
+            own_context.append_props(someprops, None);
+        }
+        let (file_ex, src_ex) = process_valobj(&own_context);
+        if let Some(file_add) = file_ex {
+            own_context.src.push(file_add);
+        }
+
+        if own_context.params.contains_key("raw") {
+            Ok(Task {
+                name: name.clone(),
+                src: own_context.src.to_slash().unwrap().into_owned(),
+                dest: own_context.dest.to_slash().unwrap().into_owned(),
+                kind: TaskKind::CopyFile(*res_type),
+                src_ex,
+            })
+        } else {
+            let kind = match res_type {
+                ResType::Texture => {
+                    let mut tex_params = TextureParams::default();
+                    tex_params.apply(&own_context);
+                    TaskKind::TextureConvert(tex_params)
+                }
+                ResType::Font => {
+                    let mut font_params = FontParams::default();
+                    font_params.apply(&own_context);
+                    TaskKind::FontConvert(font_params)
+                }
+                ResType::Sprite => {
+                    let mut sprite_params = SpriteParams::default();
+                    sprite_params.apply(&own_context);
+                    TaskKind::SpriteConvert(sprite_params)
+                }
+                ResType::IntMap => TaskKind::CopyFile(ResType::IntMap),
+                ResType::ExtMap => TaskKind::CopyFile(ResType::ExtMap),
+            };
+            Ok(Task {
+                name: name.clone(),
+                src: own_context.src.to_slash().unwrap().into_owned(),
+                dest: own_context.dest.to_slash().unwrap().into_owned(),
+                kind,
+                src_ex,
+            })
+        }
+    } else {
+        Err(anyhow!("Node is ont an object"))
+    }
+}
+
+pub fn generate_project(root: &Node) -> anyhow::Result<PackageTask> {
     if let Node::Package(filename, props, childs) = root {
         let mut result = PackageTask {
             filename: filename.clone(),
@@ -389,6 +478,15 @@ pub fn generate_package(root: &Node) -> anyhow::Result<PackageTask> {
 
         Ok(result)
     } else {
-        Err(anyhow!("Root in not a package"))
+        Err(anyhow!("Root is not a package"))
+    }
+}
+
+pub fn generate_task(root: &Node) -> anyhow::Result<Task> {
+    if matches!(root, Node::Object(_, _, _)) {
+        let params = TaskParams::new();
+        process_object(root, &params)
+    } else {
+        Err(anyhow!("Root is not a task"))
     }
 }

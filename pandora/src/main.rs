@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::project::tasks_from_string;
+use crate::project::project_from_file;
 
 mod image;
 mod project;
@@ -16,11 +16,7 @@ fn main() -> anyhow::Result<()> {
     img16.debug_save(String::from("assets/transp1_prc.png"))?;
     return Ok(());*/
 
-    let project_source = fs::read_to_string("test.pnd")?;
-
-    //let project_source = String::from("123 453 \"Hel\\\\lo !\"  sd (tex) 23");
-
-    let package = tasks_from_string(&project_source)?;
+    let package = project_from_file("pandora/test.pnd")?;
 
     println!("Package: {}", package.filename);
     println!("Tasks:");
